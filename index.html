@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Borderland Survival Game: The Arena</title>
+    <!-- Load Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* --- BORDERLAND COLOR PALETTE --- */
+        :root {
+            --spades-color: #b91c1c; 	/* Deep Blood Red (Risk/Physical) */
+            --diamonds-color: #1e3a8a; 	/* Dark, Cold Blue (Intellect/Logic) */
+            --hearts-color: #a16207; 	/* Muted, Sickly Amber (Psychological/Betrayal) */
+            --clubs-color: #065f46; 	/* Dark, Muted Green (Speed/Endurance) */
+            --bg-dark: #0a0a0a; 	/* Near Black */
+            --container-bg: #1a1a1a; /* Very Dark Dark */
+            --text-light: #e5e5e5; 	/* Off-white */
+            --text-danger: #ef4444; 	/* Bright Red for warning */
+            --text-visa: #facc15; /* Bright Yellow for VISA */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            /* Static/Grain Effect */
+            background-image: url('data:image:svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj4KICA8ZmlsdGVyIGlkPSJnIj4KICAgIDxma2R1cmVSbm9pc2UgdHlwZT0idHVyYnVsZW5jZSIgYmFzZUZyZXF1ZW5jeT0iMC41IiBudW1PY3RhdmVzPSIyIiByZXN1bHQ9Im5vaXNlIi8+CiAgICA8ZmV0dXJlQ29sb3JNYXRyaXggaWQ9Im0iIHR5cGU9InNhdHVyYXRlIiB2YWx1ZXM9IjAiLz46CiAgPC9maWx0ZXI+CiAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuMDIiIGZpbHRlcj0idXJsKCNnKSIvPgogIDxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMwMDAiIG9wYWNpdHk9IjAuMDIiLz4KPC9zdmc+');
+            background-size: 100px;
+        }
+        .container {
+            width: 100%;
+            max-width: 650px; /* Slightly wider */
+            min-height: 500px;
+            background-color: var(--container-bg);
+            border-radius: 0.5rem;
+            border: 2px solid var(--spades-color); 
+            box-shadow: 0 0 30px rgba(185, 28, 28, 0.4), 0 0 10px rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* --- Actual Card Design Styles --- */
+        .game-card {
+            background-color: white;
+            color: #1a1a1a; /* Dark text on light card */
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            height: 250px; /* Fixed height for consistent look */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+            border: 3px solid transparent;
+            cursor: pointer;
+        }
+        .game-card:hover:not(:disabled) {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 10px 20px rgba(255, 255, 255, 0.2);
+            border-color: var(--spades-color);
+        }
+        .game-card:disabled {
+            cursor: not-allowed;
+            opacity: 0.4;
+            transform: none !important;
+            box-shadow: none !important;
+            filter: grayscale(100%);
+        }
+        .card-symbol {
+            font-size: 2.5rem;
+            font-weight: 900;
+            position: absolute;
+            line-height: 1; /* Prevent symbol taking up too much vertical space */
+        }
+        .card-symbol.top-left { top: 10px; left: 10px; }
+        .card-symbol.bottom-right { bottom: 10px; right: 10px; transform: rotate(180deg); }
+
+        /* Use Borderland colors for the symbols */
+        .red-suit-symbol { color: #ef4444; } /* Red suits (Hearts/Diamonds) */
+        .black-suit-symbol { color: black; } /* Black suits (Spades/Clubs) */
+        /* --- End Card Design Styles --- */
+        
+        /* --- Game of Hearts Styles (Shell Game) --- */
+        #card-table {
+            position: relative;
+            height: 180px; /* Space for card movement */
+        }
+        .shell-card {
+            position: absolute;
+            width: 120px;
+            height: 180px;
+            background-color: #262626; /* Back of card */
+            border: 2px solid #a16207; /* Hearts border color */
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #ccc;
+            transition: transform 0.3s ease-in-out, background-color 0.3s;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        .shell-card:hover:not(.shuffling) {
+            background-color: #3f3f46;
+        }
+        .shuffling {
+            transition: transform 0.3s ease-in-out;
+            cursor: default;
+        }
+        .flipped-card {
+            background-color: white !important;
+            border-color: #1a1a1a !important;
+            color: #1a1a1a;
+            cursor: default;
+            box-shadow: 0 0 0 8px #93c5fd; /* Blue-300 ring on selection */
+        }
+        .correct-card {
+            box-shadow: 0 0 0 8px #10b981 !important; /* Green ring on correct guess */
+        }
+        .incorrect-card {
+            box-shadow: 0 0 0 8px #ef4444 !important; /* Red ring on incorrect guess */
+        }
+
+        /* General Button Styles (for UI overlay/non-card actions) */
+        .btn {
+            padding: 12px 24px;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            transition: transform 0.1s, box-shadow 0.1s, opacity 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px var(--text-danger);
+        }
+        
+        /* Thematic Button Colors */
+        .btn-clubs { background-color: var(--clubs-color); color: white; }
+        
+        /* --- Dystopian/Flicker Effects --- */
+        @keyframes pulse-white {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 10px white; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        .pulse-white { animation: pulse-white 1s infinite; }
+
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% { text-shadow: 0 0 4px #fff, 0 0 11px #fff, 0 0 19px var(--text-danger), 0 0 40px var(--text-danger); }
+            20%, 24%, 55% { text-shadow: none; }
+        }
+
+        .flicker-text {
+            color: var(--text-light);
+            animation: flicker 2s infinite alternate;
+        }
+        
+        #pressure-bar {
+            height: 25px;
+            transition: width 0.1s linear;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .moving-target {
+            position: absolute;
+            transition: all 0.25s linear; 
+        }
+        .color-button {
+            transition: box-shadow 0.3s, border 0.3s, transform 0.1s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container" class="container">
+        <!-- Content will be rendered here by JavaScript -->
+    </div>
+
+    <!-- The Scoreboard and Controls should float on top -->
+    <div id="ui-overlay" class="fixed top-0 left-0 right-0 p-4 bg-gray-900 bg-opacity-90 border-b border-red-800 shadow-xl hidden z-10">
+        <div class="max-w-6xl mx-auto flex justify-between items-center text-lg font-bold">
+            <div id="player-status" class="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-6">
+                <span id="player-count-display" class="text-gray-400">CONTESTANT ID: 1</span>
+                <span id="visa-display" class="text-yellow-400">VISA: 5 DAYS</span>
+            </div>
+            <button onclick="resetGame(true)" class="text-xs px-3 py-1 btn bg-gray-700 hover:bg-gray-600 transition-colors">INITIATE REBOOT</button>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Game State Variables ---
+        let visaDays = 5; // Starting VISA Days
+        const DAYS_ON_SUCCESS = 1;
+        let playerCount = 1;
+        
+        // The list of available suits. Cleared suits are removed from this array.
+        let unlockedSuits = ['clubs', 'spades', 'diamonds', 'hearts']; 
+        let finalSuit = null; // Stores the name of the last remaining suit for the ultimate challenge
+
+        let isGameActive = false;
+        let timer = null; 
+        let movementTimer = null; 
+        
+        // NEW: Developer mode flag for skipping levels
+        let isDeveloperMode = true; // Set this to false to disable the dev pass button
+
+        // Global variables for Firebase (not strictly used yet, but kept for future multi-user compatibility)
+        const __app_id = 'borderland-survival-game';
+
+        // --- Core Utility Functions ---
+
+        /**
+         * Updates the score (VISA Days) on the UI overlay.
+         */
+        function updateUI() {
+            document.getElementById('visa-display').textContent = `VISA: ${visaDays} DAYS`;
+            document.getElementById('player-count-display').textContent = `CONTESTANT ID: ${playerCount}`;
+
+            if (isGameActive) {
+                document.getElementById('ui-overlay').classList.remove('hidden');
+            } else {
+                document.getElementById('ui-overlay').classList.add('hidden');
+            }
+        }
+
+        /**
+         * Checks if the player has enough VISA Days.
+         */
+        function checkVisa() {
+            if (visaDays <= 0) {
+                gameOver(`VISA EXPIRED. Immediate termination protocol engaged.`);
+                return false;
+            }
+            return true;
+        }
+
+        /**
+         * Displays a message and returns the player to the home screen.
+         * @param {string} message - The reason for Game Over.
+         */
+        function gameOver(message) {
+            isGameActive = false;
+            if (timer) clearInterval(timer);
+            if (movementTimer) clearInterval(movementTimer);
+            
+            // Clear global window functions that might exist for the current game
+            window.applyPressure = undefined;
+            window.selectDistractor = undefined;
+            window.selectShellCard = undefined; // New function for the shell game
+
+            const content = document.getElementById('game-container');
+            content.innerHTML = `
+                <div class="text-center space-y-6">
+                    <h1 class="text-6xl font-extrabold flicker-text text-red-700">TERMINATION</h1>
+                    <p class="text-xl text-gray-400">${message}</p>
+                    <p class="text-lg font-semibold text-red-500">FINAL VISA: ${visaDays} DAYS</p>
+                    <button onclick="resetGame()" class="btn btn-clubs mt-4">INITIATE REBOOT SEQUENCE</button>
+                </div>
+            `;
+            updateUI();
+        }
+
+        /**
+         * Resets the game state and renders the home page.
+         */
+        function resetGame(confirm = false) {
+            // NOTE: Using a simple JS confirmation box here. In a real application, this would be a custom modal.
+            if (confirm && isGameActive) {
+                if (!window.confirm("WARNING: Initiating reboot will forfeit current progress. Proceed?")) return;
+            }
+
+            visaDays = 5;
+            playerCount = 1;
+            unlockedSuits = ['clubs', 'spades', 'diamonds', 'hearts']; // Reset available suits
+            finalSuit = null; // Reset final suit
+            isGameActive = false;
+            updateUI();
+            renderHome();
+        }
+
+        // --- Game Logic and Rendering ---
+
+        /**
+         * Renders the initial home screen (Step 1).
+         */
+        function renderHome() {
+            const content = document.getElementById('game-container');
+            content.innerHTML = `
+                <div class="text-center space-y-6">
+                    <h1 class="text-4xl font-extrabold flicker-text text-spades-color">WELCOME TO THE ELIMINATION ARENA</h1>
+                    <p class="text-gray-400 text-lg">Your survival is tied to your <span class="text-yellow-400 font-bold">VISA Days</span>. You begin with <span class="text-yellow-400 font-bold">${visaDays}</span> Days. Every Game CLEAR earns you +${DAYS_ON_SUCCESS} Day.</p>
+                    <p class="text-red-500 font-semibold text-xl">You must clear 3 sectors to face the Final Arbiter. Failure in any game results in immediate VISA EXPIRATION.</p>
+                    
+                    <div class="mt-6 flex flex-col items-center space-y-4">
+                        <label for="player-count" class="text-lg font-semibold text-gray-400">IDENTIFY CONTESTANT (ID):</label>
+                        <input id="player-count" type="number" value="1" min="1" max="99" class="p-3 w-32 text-center rounded-sm bg-gray-900 text-white border border-spades-color focus:outline-none focus:ring-2 focus:ring-spades-color shadow-inner">
+                    </div>
+
+                    <button onclick="startGame()" class="btn btn-clubs mt-8 w-full max-w-xs text-2xl">ENTER THE BORDERLAND</button>
+                </div>
+            `;
+        }
+
+        /**
+         * Starts the game by reading player count and initiating the first decision.
+         */
+        function startGame() {
+            const input = document.getElementById('player-count');
+            playerCount = parseInt(input.value) || 1;
+            isGameActive = true;
+            updateUI();
+            // Start with the decision screen, all four games are available initially
+            renderDecision();
+        }
+
+        /**
+         * Renders the screen where the player makes their next choice.
+         */
+        function renderDecision() {
+            if (!checkVisa()) return;
+
+            // Check if we are down to the final game
+            if (unlockedSuits.length === 1) {
+                finalSuit = unlockedSuits[0];
+                return renderFinalDecision(finalSuit);
+            }
+            
+            const suitsRemaining = unlockedSuits.length;
+            
+            // Define card attributes based on suit
+            const cardAttributes = {
+                spades: { icon: '♠', color: 'black-suit-symbol', title: 'J of Spades', name: 'Endurance & Risk' },
+                diamonds: { icon: '♦', color: 'red-suit-symbol', title: 'Q of Diamonds', name: 'Calculation & Logic' },
+                hearts: { icon: '♥', color: 'red-suit-symbol', title: 'K of Hearts', name: 'Memory & Paradox' },
+                clubs: { icon: '♣', color: 'black-suit-symbol', title: '7 of Clubs', name: 'Physical Endurance' }
+            };
+
+
+            const content = document.getElementById('game-container');
+            content.innerHTML = `
+                <div class="text-center space-y-6">
+                    <h2 class="text-3xl font-bold text-green-500 flicker-text">ELIMINATION PHASE: SUITS REMAINING: ${suitsRemaining}</h2>
+                    <p class="text-lg text-gray-400">A sector is consumed after every successful clearance. Choose your next trial wisely.</p>
+                    <p class="text-xl font-semibold">Current VISA: <span class="text-yellow-400">${visaDays}</span> DAYS</p>
+
+                    <h3 class="text-2xl font-semibold text-gray-300 pt-4">CHOOSE YOUR NEXT CARD:</h3>
+
+                    <div class="flex flex-wrap justify-center gap-4 mt-6">
+                        <!-- Mapping over all suits to generate cards -->
+                        ${['spades', 'diamonds', 'hearts', 'clubs'].map(suit => {
+                            const isLocked = !unlockedSuits.includes(suit);
+                            const attrs = cardAttributes[suit];
+                            
+                            // Determine symbol color based on suit type
+                            const symbolColorClass = (suit === 'hearts' || suit === 'diamonds') ? 'red-suit-symbol' : 'black-suit-symbol';
+
+                            return `
+                                <div class="w-full sm:w-40 relative">
+                                    <button
+                                        onclick="playGame('${suit}')"
+                                        ${isLocked ? 'disabled' : ''}
+                                        class="game-card w-full h-full p-4 flex flex-col items-center justify-center text-center ${isLocked ? 'grayscale opacity-70 cursor-not-allowed' : 'hover:border-red-500'}"
+                                        title="${isLocked ? 'CLEARED: This card is eliminated.' : `Enter the ${attrs.title}`}"
+                                    >
+                                        <!-- Card Symbols -->
+                                        <span class="card-symbol top-left ${symbolColorClass}" aria-hidden="true">${attrs.icon}</span>
+                                        <span class="card-symbol bottom-right ${symbolColorClass}" aria-hidden="true">${attrs.icon}</span>
+
+                                        <!-- Main Content -->
+                                        <p class="text-xl font-extrabold text-gray-900 leading-tight mt-6">${attrs.icon}</p>
+                                        <p class="text-xs font-semibold text-gray-700 mt-1">${attrs.name}</p>
+                                        
+                                        ${isLocked ? '<p class="absolute inset-0 flex items-center justify-center bg-black/80 text-white text-lg font-bold rounded-lg">CLEARED</p>' : ''}
+                                    </button>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Renders the screen for the final remaining suit.
+         * @param {string} suitId - The final suit remaining.
+         */
+        function renderFinalDecision(suitId) {
+            
+            // Define card attributes based on suit
+            const attrs = {
+                spades: { title: 'J ♠', icon: '♠', name: 'Endurance & Risk' },
+                diamonds: { title: 'Q ♦', icon: '♦', name: 'Calculation & Logic' },
+                hearts: { title: 'K ♥', icon: '♥', name: 'Memory & Paradox' },
+                clubs: { title: '7 ♣', icon: '♣', name: 'Physical Endurance' }
+            }[suitId];
+
+            if (!attrs) return gameOver('FATAL ERROR: Invalid final card.');
+
+            const symbolColorClass = (suitId === 'hearts' || suitId === 'diamonds') ? 'red-suit-symbol' : 'black-suit-symbol';
+            
+            const content = document.getElementById('game-container');
+            content.innerHTML = `
+                <div class="text-center space-y-6">
+                    <h2 class="text-5xl font-extrabold flicker-text text-red-700">THE FINAL ARBITER</h2>
+                    <p class="text-lg text-gray-400">Only ONE card remains. Your fate hinges on the clearance of this final sector.</p>
+                    <p class="text-xl font-semibold">Current VISA: <span class="text-yellow-400">${visaDays}</span> DAYS</p>
+
+                    <h3 class="text-2xl font-semibold text-gray-300 pt-4">THE ULTIMATE TRIAL:</h3>
+                    
+                    <div class="w-full flex justify-center mt-6">
+                        <button
+                            onclick="playGame('${suitId}')"
+                            class="game-card w-full max-w-sm h-64 p-8 flex flex-col items-center justify-center transition duration-300 transform scale-105 shadow-2xl border-4 border-red-700 hover:border-white"
+                        >
+                            <!-- Card Symbols -->
+                            <span class="card-symbol top-left ${symbolColorClass}" style="font-size: 3.5rem;" aria-hidden="true">${attrs.icon}</span>
+                            <span class="card-symbol bottom-right ${symbolColorClass}" style="font-size: 3.5rem;" aria-hidden="true">${attrs.icon}</span>
+
+                            <!-- Main Content -->
+                            <p class="text-5xl font-extrabold text-gray-900 leading-tight">${attrs.title}</p>
+                            <p class="block text-lg font-bold text-gray-700 mt-2">${attrs.name}</p>
+                            <span class="block text-xs mt-4 text-red-700 font-semibold">THE ULTIMATE ARBITER. WIN OR PERISH.</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        /**
+         * Main function to route to the correct game logic.
+         */
+        function playGame(suitId) {
+            // Clear any running timers and global functions
+            if (timer) clearInterval(timer);
+            if (movementTimer) clearInterval(movementTimer);
+            window.applyPressure = undefined;
+            window.selectDistractor = undefined;
+            window.selectShellCard = undefined; // Ensure the new function is cleared
+
+            switch (suitId) {
+                case 'clubs':
+                    return gameOfClubs();
+                case 'spades':
+                    return gameOfSpades();
+                case 'diamonds':
+                    return gameOfDiamonds();
+                case 'hearts':
+                    return gameOfHearts(); // Now points to the Shell Game
+                default:
+                    // Should not happen with the current logic
+                    gameOver('UNRECOGNIZED SUIT PROTOCOL. IMMEDIATE TERMINATION.');
+            }
+        }
+
+        /**
+         * Handles the result of any game.
+         * @param {boolean} success - True if the player wins.
+         * @param {string} suit - 'spades', 'diamonds', 'hearts', or 'clubs'.
+         * @param {string} gameName - The name of the game, e.g., 'J ♠'.
+         * @param {boolean} isDevPass - True if the result came from the developer bypass button.
+         */
+        function handleGameResult(success, suit, gameName, isDevPass = false) {
+            const content = document.getElementById('game-container');
+            if (timer) clearInterval(timer);
+            if (movementTimer) clearInterval(movementTimer);
+            
+            // Clear global window functions
+            window.applyPressure = undefined;
+            window.selectDistractor = undefined;
+            window.selectShellCard = undefined;
+
+            if (success) {
+                // Check for the ultimate win condition
+                if (finalSuit && suit === finalSuit) {
+                    // Player won the FINAL game
+                    visaDays += DAYS_ON_SUCCESS;
+                    isGameActive = false; // Game is over
+                    content.innerHTML = `
+                        <div class="text-center space-y-6">
+                            <h1 class="text-5xl font-extrabold text-green-500 pulse-white">ULTIMATE CLEAR: FREEDOM GRANTED!</h1>
+                            <p class="text-xl text-gray-400">You have cleared all sectors, including the Final Arbiter (${gameName}).</p>
+                            <p class="text-2xl font-semibold text-yellow-400">FINAL VISA STATUS: ${visaDays} DAYS</p>
+                            <button onclick="resetGame()" class="btn btn-clubs mt-4">INITIATE REBOOT / NEW GAME</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Normal successful clearance (not the final game)
+                
+                // 1. Grant VISA day only if not dev pass
+                if (!isDevPass) {
+                    visaDays += DAYS_ON_SUCCESS;
+                }
+                
+                // 2. Permanently remove the suit from the pool
+                unlockedSuits = unlockedSuits.filter(s => s !== suit);
+
+                let message = `<p class="text-lg text-gray-400">REWARD GRANTED: <span class="text-yellow-400 font-bold">+${DAYS_ON_SUCCESS} DAY</span>.</p>`;
+                if (isDevPass) {
+                    message = `<p class="text-xl font-extrabold text-red-500">DEVELOPER BYPASS DETECTED.</p><p class="text-lg text-gray-400">STATUS: CLEAR. NO VISA DAY GRANTED.</p>`;
+                }
+                
+                // 3. Determine next action text
+                let nextActionText = 'PROCEED TO NEXT DECISION';
+                if (unlockedSuits.length === 1) {
+                    nextActionText = 'PROCEED TO THE FINAL ARBITER';
+                }
+
+
+                content.innerHTML = `
+                    <div class="text-center space-y-6">
+                        <h2 class="text-4xl font-extrabold text-green-500 flicker-text">SECTOR ${gameName} CLEARED!</h2>
+                        ${message}
+                        <p class="text-xl font-semibold">New VISA Status: <span class="text-yellow-400">${visaDays}</span> DAYS</p>
+                        <button onclick="renderDecision()" class="btn btn-clubs mt-4">${nextActionText}</button>
+                    </div>
+                `;
+                
+            } else {
+                // Failure instantly ends the game regardless of points
+                visaDays = 0; // Ensure 0 days on failure
+                gameOver(`CRITICAL FAILURE during the Trial of ${gameName}.`);
+            }
+            updateUI();
+        }
+
+        /**
+         * Generates the HTML for the Developer Pass button.
+         * @param {string} suit - The current suit ID.
+         * @param {string} gameName - The current game name.
+         */
+        function getDeveloperPassButton(suit, gameName) {
+            if (!isDeveloperMode) return '';
+            return `
+                <div class="w-full flex justify-center pt-8">
+                    <button onclick="handleGameResult(true, '${suit}', '${gameName}', true)" class="btn bg-gray-700 text-yellow-300 w-full max-w-sm text-sm">
+                        [DEVELOPER PASS - SKIP LEVEL]
+                    </button>
+                </div>
+            `;
+        }
+
+        // --- Game Implementations (The Challenges) ---
+
+        /**
+         * Game: 7 of Clubs (Physical/Speed) - The Red Light Target
+         * Challenge: Click the MOVING target before the 4-second timer runs out.
+         */
+        function gameOfClubs() {
+            const GAME_TIME = 4000;
+            let startTime;
+            const SUIT = 'clubs';
+            const GAME_NAME = '7 ♣';
+
+            const content = document.getElementById('game-container');
+            content.innerHTML = `
+                <div id="game-clubs" class="text-center space-y-8 h-full flex flex-col justify-between relative">
+                    <h2 class="text-4xl font-extrabold flicker-text text-clubs-color">${GAME_NAME}: RED LIGHT TARGET</h2>
+                    <p class="text-lg text-gray-400">PROTOCOL: Engage the MOVING target within <span class="text-yellow-400">4.00 seconds</span>. The target WILL NOT STOP moving.</p>
+                    
+                    <div id="target-area" class="flex-grow relative h-64 mx-auto w-full max-w-sm rounded-lg border-2 border-dashed border-clubs-color p-2 shadow-inner bg-gray-900">
+                        <button id="target-btn" class="moving-target w-16 h-16 bg-clubs-color rounded-full pulse-white shadow-2xl focus:outline-none focus:ring-4 focus:ring-white transform -translate-x-1/2 -translate-y-1/2" style="left:50%; top:50%;">
+                            <span class="text-xs font-semibold text-white">ACTIVATE</span>
+                        </button>
+                    </div>
+
+                    <div id="timer-display" class="text-3xl font-mono text-clubs-color pt-4">04.00 SECONDS</div>
+                    ${getDeveloperPassButton(SUIT, GAME_NAME)}
+                </div>
+            `;
+
+            const targetBtn = document.getElementById('target-btn');
+            const targetArea = document.getElementById('target-area');
+            const timerDisplay = document.getElementById('timer-display');
+
+            function moveTarget() {
+                if (!targetArea) return;
+                // Use offset dimensions for bounds calculation
+                const targetSize = targetBtn.offsetWidth; 
+                const maxX = targetArea.offsetWidth - targetSize;
+                const maxY = targetArea.offsetHeight - targetSize;
+                
+                // Ensure target moves within bounds
+                const newX = Math.max(0, Math.random() * maxX);
+                const newY = Math.max(0, Math.random() * maxY);
+
+                targetBtn.style.left = `${newX}px`;
+                targetBtn.style.top = `${newY}px`;
+            }
+
+            timer = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const remaining = Math.max(0, GAME_TIME - elapsed);
+                timerDisplay.textContent = `${(remaining / 1000).toFixed(2)} SECONDS`;
+
+                if (remaining <= 0) {
+                    clearInterval(timer);
+                    clearInterval(movementTimer);
+                    targetBtn.disabled = true;
+                    handleGameResult(false, SUIT, GAME_NAME);
+                }
+            }, 50);
+
+            movementTimer = setInterval(moveTarget, 400);
+
+            targetBtn.onclick = () => {
+                const reactionTime = Date.now() - startTime;
+                clearInterval(timer);
+                clearInterval(movementTimer);
+                targetBtn.disabled = true;
+
+                if (reactionTime < GAME_TIME) {
+                    handleGameResult(true, SUIT, GAME_NAME);
+                } else {
+                    handleGameResult(false, SUIT, GAME_NAME);
+                }
+            };
+
+            startTime = Date.now();
+            moveTarget();
+        }
+
+
+        /**
+         * Game: Jack of Spades (Physical/Risk) - Critical Pressure
+         * Challenge: Click a button rapidly to fill a bar BEFORE a timer runs out, risking failure with every click.
+         */
+        function gameOfSpades() {
+            let progress = 0;
+            const REQUIRED_CLICKS = 15;
+            const MAX_TIME = 8000; // 8 seconds limit
+            let clicks = 0;
+            let startTime;
+            const SUIT = 'spades';
+            const GAME_NAME = 'J ♠';
+
+            function renderSpades() {
+                const content = document.getElementById('game-container');
+                content.innerHTML = `
+                    <div class="text-center space-y-6">
+                        <h2 class="text-4xl font-extrabold flicker-text text-spades-color">${GAME_NAME}: CRITICAL PRESSURE</h2>
+                        <p class="text-lg text-gray-400">PROTOCOL: Execute <span class="text-yellow-400 font-bold">${REQUIRED_CLICKS}</span> actions within <span class="text-yellow-400">8.0 SECONDS</span>. Probability of <span class="text-red-500 font-bold">SYSTEM FAILURE</span> increases exponentially with each action.</p>
+                        
+                        <div id="spades-timer-display" class="text-3xl font-mono text-red-500 pt-2 pb-4">08.00 SECONDS</div>
+
+                        <div class="mt-4">
+                            <div class="w-full h-8 bg-gray-800 rounded-sm overflow-hidden shadow-inner border border-spades-color">
+                                <div id="pressure-bar" class="bg-red-700 h-full" style="width: ${progress}%"></div>
+                            </div>
+                            <p class="text-sm pt-2 text-gray-500">EXECUTION COUNT: <span id="progress-text">${clicks} / ${REQUIRED_CLICKS}</span></p>
+                        </div>
+                        
+                        <button id="pressure-plate-btn" onclick="window.applyPressure()" class="btn btn-clubs bg-red-800 hover:bg-red-700 w-full max-w-sm text-2xl p-4 mt-6 transform hover:scale-[1.02] active:scale-95 transition-all">
+                            EXECUTE ACTION
+                        </button>
+                        <p id="risk-display" class="text-red-500 text-sm font-semibold pt-2">FAILURE RISK: 0.0%</p>
+                        
+                        ${getDeveloperPassButton(SUIT, GAME_NAME)}
+                    </div>
+                `;
+            }
+
+            // Timer management for Spades
+            function startSpadesTimer() {
+                const timerDisplay = document.getElementById('spades-timer-display');
+                
+                timer = setInterval(() => {
+                    const elapsed = Date.now() - startTime;
+                    const remaining = Math.max(0, MAX_TIME - elapsed);
+                    timerDisplay.textContent = `${(remaining / 1000).toFixed(2)} SECONDS`;
+
+                    if (remaining < 3000) {
+                        timerDisplay.classList.add('flicker-text');
+                    }
+
+                    if (remaining <= 0) {
+                        clearInterval(timer);
+                        document.getElementById('pressure-plate-btn').disabled = true;
+                        gameOver(`TIMEOUT! You failed to complete the ${GAME_NAME} challenge within the time limit.`);
+                    }
+                }, 50);
+            }
+
+            window.applyPressure = () => {
+                const pressureBtn = document.getElementById('pressure-plate-btn');
+                if (clicks >= REQUIRED_CLICKS || !pressureBtn || pressureBtn.disabled) return;
+
+                clicks++;
+                
+                // Calculate Failure Chance (Exponential increase)
+                // Risk is calculated as (clicks^2) / 5. On the 15th click, the risk is (15*15)/5 = 45%
+                const failureChance = Math.pow(clicks, 2) / 5; 
+                
+                document.getElementById('risk-display').textContent = `FAILURE RISK: ${failureChance.toFixed(1)}%`;
+
+                // Check for failure
+                if (Math.random() * 100 < failureChance) {
+                    clearInterval(timer);
+                    pressureBtn.disabled = true;
+                    gameOver(`CATASTROPHIC FAILURE! The system broke after ${clicks} critical actions.`);
+                    return;
+                }
+                
+                // Success logic
+                progress = Math.min(100, (clicks / REQUIRED_CLICKS) * 100);
+                document.getElementById('pressure-bar').style.width = `${progress}%`;
+                document.getElementById('progress-text').textContent = `${clicks} / ${REQUIRED_CLICKS}`;
+
+                if (clicks === REQUIRED_CLICKS) {
+                    clearInterval(timer);
+                    pressureBtn.disabled = true;
+                    setTimeout(() => handleGameResult(true, SUIT, GAME_NAME), 500);
+                }
+            };
+            
+            renderSpades();
+            startTime = Date.now();
+            startSpadesTimer();
+        }
+
+        /**
+         * Game: Queen of Diamonds (Intelligence) - The Logic Grid
+         * Challenge: Quick Math Puzzle - Solve a simple equation in 5 seconds.
+         */
+        function gameOfDiamonds() {
+            const MAX_TIME = 5000;
+            const SUIT = 'diamonds';
+            const GAME_NAME = 'Q ♦';
+
+            // Generate equation: A + B * C
+            const A = Math.floor(Math.random() * 15) + 5;
+            const B = Math.floor(Math.random() * 8) + 1;
+            const C = Math.floor(Math.random() * 5) + 1;
+            
+            // Equation display uses simple text, not LaTeX
+            const equation = `(${A} + ${B}) × ${C}`;
+            const correctAnswer = (A + B) * C;
+
+            let startTime;
+
+            const content = document.getElementById('game-container');
+            content.innerHTML = `
+                <div id="game-diamonds" class="text-center space-y-6">
+                    <h2 class="text-4xl font-extrabold flicker-text text-diamonds-color">${GAME_NAME}: THE LOGIC GRID</h2>
+                    <p class="text-lg text-gray-400">PROTOCOL: Process the data and provide the exact solution within <span class="text-yellow-400">5 SECONDS</span>. Any deviation is fatal.</p>
+
+                    <p class="text-xl font-bold pt-4 text-red-400">INPUT REQUIRED:</p>
+                    <div class="text-6xl font-mono text-white bg-gray-900 inline-block p-4 rounded-sm shadow-xl border border-diamonds-color mb-6">${equation} = ?</div>
+
+                    <input id="answer-input" type="number" placeholder="SOLUTION" class="p-3 w-full max-w-xs text-center rounded-sm bg-gray-800 text-white border border-diamonds-color focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <button id="submit-btn" class="btn btn-clubs bg-blue-800 hover:bg-blue-700 w-full max-w-xs mt-4">CONFIRM INPUT</button>
+
+                    <div id="diamond-timer" class="text-3xl font-mono text-yellow-500 pt-4">05.00 SECONDS</div>
+                    <div id="result-message" class="text-lg h-6"></div>
+                    
+                    ${getDeveloperPassButton(SUIT, GAME_NAME)}
+                </div>
+            `;
+
+            const submitBtn = document.getElementById('submit-btn');
+            const answerInput = document.getElementById('answer-input');
+            const timerDisplay = document.getElementById('diamond-timer');
+            const resultMessage = document.getElementById('result-message');
+
+            function checkAnswer() {
+                if (timer) clearInterval(timer);
+                submitBtn.disabled = true;
+                answerInput.disabled = true;
+
+                const userGuess = parseInt(answerInput.value);
+
+                if (userGuess === correctAnswer) {
+                    resultMessage.innerHTML = '<span class="text-green-500 font-bold">SOLUTION ACCEPTED.</span>';
+                    setTimeout(() => handleGameResult(true, SUIT, GAME_NAME), 1500);
+                } else {
+                    resultMessage.innerHTML = `<span class="text-red-500 font-bold">DATA MISMATCH! SOLUTION WAS ${correctAnswer}.</span>`;
+                    setTimeout(() => handleGameResult(false, SUIT, GAME_NAME), 1500);
+                }
+            }
+
+            timer = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const remaining = Math.max(0, MAX_TIME - elapsed);
+                timerDisplay.textContent = `${(remaining / 1000).toFixed(2)} SECONDS`;
+                
+                if (remaining < 2000) {
+                    timerDisplay.classList.add('text-red-500');
+                    timerDisplay.classList.remove('text-yellow-500');
+                }
+
+                if (remaining <= 0) {
+                    clearInterval(timer);
+                    submitBtn.disabled = true;
+                    answerInput.disabled = true;
+                    resultMessage.innerHTML = '<span class="text-red-500 font-bold">TIMEOUT!</span>';
+                    setTimeout(() => handleGameResult(false, SUIT, GAME_NAME), 1500);
+                }
+            }, 50);
+
+            submitBtn.onclick = checkAnswer;
+            answerInput.addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    checkAnswer();
+                }
+            });
+
+            startTime = Date.now();
+        }
+
+        /**
+         * Game: King of Hearts (Psychological/Memory) - The Shell Game (Thimblerig)
+         * Challenge: Track the King of Hearts as it is shuffled rapidly between three cards.
+         */
+        function gameOfHearts() {
+            const SUIT = 'hearts';
+            const GAME_NAME = 'K ♥';
+            const CARDS_COUNT = 3;
+            const SHUFFLE_DURATION = 1500; // Total time for shuffling
+            const SHUFFLE_STEPS = 5; // Number of swap operations
+            
+            // correctCardIndex is the index (0, 1, or 2) of the card that has the King of Hearts
+            let correctCardIndex = 0; 
+
+            // Function to get a card element by its index
+            const getCardElement = (index) => document.getElementById(`card-${index}`);
+            const getCardIcon = (index) => document.getElementById(`icon-${index}`);
+
+            function renderHearts() {
+                const content = document.getElementById('game-container');
+                content.innerHTML = `
+                    <div class="text-center space-y-6">
+                        <h2 class="text-4xl font-extrabold flicker-text text-hearts-color">${GAME_NAME}: THE MEMORY PARADOX</h2>
+                        <p class="text-lg text-gray-400">PROTOCOL: Memorize the signal card. Track it as the cards are shuffled. Failure to identify it is immediate termination.</p>
+                        
+                        <div id="card-table" class="flex justify-center items-end mx-auto w-full max-w-md my-8">
+                            <!-- Cards will be dynamically positioned here -->
+                        </div>
+                        
+                        <div id="game-status" class="text-3xl font-mono text-yellow-400 pt-4"></div>
+                        <p id="selection-prompt" class="text-xl font-semibold text-gray-300 pt-2 hidden">SELECT THE SIGNAL CARD.</p>
+                        
+                        ${getDeveloperPassButton(SUIT, GAME_NAME)}
+                    </div>
+                `;
+
+                const cardTable = document.getElementById('card-table');
+                
+                // Set up initial card positions
+                for (let i = 0; i < CARDS_COUNT; i++) {
+                    const card = document.createElement('div');
+                    card.id = `card-${i}`;
+                    card.className = 'shell-card absolute select-none';
+                    // Initial positions: center the group of 3 cards within the 480px max-w-md container (120px * 3 + 30px spacing)
+                    const initialLeft = (480 / 2) - ((CARDS_COUNT * 120 + (CARDS_COUNT - 1) * 30) / 2);
+                    card.style.left = `${initialLeft + (i * 150)}px`; // 120px width + 30px margin
+                    card.style.top = '0'; // Positioned at the top of the card table area
+                    card.innerHTML = `
+                        <div id="icon-${i}" class="absolute inset-0 flex items-center justify-center hidden">
+                            <span class="text-7xl text-red-500 font-extrabold" style="color:var(--hearts-color)">K ♥</span>
+                        </div>
+                        <span class="text-2xl font-bold">CARD ${i + 1}</span>
+                    `;
+                    cardTable.appendChild(card);
+                }
+            }
+
+            // Swaps the visual positions of two cards
+            function swapCards(index1, index2) {
+                const card1 = getCardElement(index1);
+                const card2 = getCardElement(index2);
+
+                const left1 = card1.style.left;
+                const left2 = card2.style.left;
+
+                // Apply CSS transition
+                card1.style.left = left2;
+                card2.style.left = left1;
+
+                // Update the state variable if the correct card was part of the swap
+                if (correctCardIndex === index1) {
+                    correctCardIndex = index2;
+                } else if (correctCardIndex === index2) {
+                    correctCardIndex = index1;
+                }
+            }
+
+            // Main shuffling loop
+            function shuffleLoop() {
+                const statusDisplay = document.getElementById('game-status');
+                const cardElements = [getCardElement(0), getCardElement(1), getCardElement(2)];
+                let stepsCompleted = 0;
+
+                // Add shuffling class to disable clicks and enable transitions
+                cardElements.forEach(card => card.classList.add('shuffling'));
+
+                const shuffleInterval = setInterval(() => {
+                    if (stepsCompleted >= SHUFFLE_STEPS) {
+                        clearInterval(shuffleInterval);
+                        
+                        // End of shuffle cleanup
+                        cardElements.forEach(card => card.classList.remove('shuffling'));
+                        statusDisplay.textContent = 'SELECTION AUTHORIZED.';
+                        document.getElementById('selection-prompt').classList.remove('hidden');
+
+                        // Enable selection
+                        for (let i = 0; i < CARDS_COUNT; i++) {
+                            getCardElement(i).style.cursor = 'pointer';
+                            getCardElement(i).onclick = () => window.selectShellCard(i);
+                        }
+                        return;
+                    }
+
+                    // Perform a random swap
+                    let index1 = Math.floor(Math.random() * CARDS_COUNT);
+                    let index2 = Math.floor(Math.random() * CARDS_COUNT);
+
+                    // Ensure they are different cards
+                    while (index1 === index2) {
+                        index2 = Math.floor(Math.random() * CARDS_COUNT);
+                    }
+
+                    swapCards(index1, index2);
+                    stepsCompleted++;
+
+                }, SHUFFLE_DURATION / SHUFFLE_STEPS); // Time between swaps
+            }
+
+            // Function called when the player clicks a card
+            window.selectShellCard = (selectedCardIndex) => {
+                // Disable further clicks
+                for (let i = 0; i < CARDS_COUNT; i++) {
+                    getCardElement(i).onclick = null;
+                }
+                
+                document.getElementById('selection-prompt').classList.add('hidden');
+
+                const statusDisplay = document.getElementById('game-status');
+                const selectedElement = getCardElement(selectedCardIndex);
+                const correctElement = getCardElement(correctCardIndex);
+
+                // Reveal all cards (or just the correct one, and the selected one)
+                for (let i = 0; i < CARDS_COUNT; i++) {
+                    getCardIcon(i).classList.remove('hidden'); // Reveal the K ♥ icon on the correct card
+                    getCardElement(i).classList.add('flipped-card'); // Flip all cards over
+                }
+
+                // Highlight user selection
+                selectedElement.classList.remove('flipped-card');
+
+                // Check result and apply final styling
+                const success = (selectedCardIndex === correctCardIndex);
+
+                if (success) {
+                    statusDisplay.textContent = 'SUCCESS! MEMORY STABILIZED.';
+                    selectedElement.classList.add('correct-card');
+                    statusDisplay.classList.remove('text-yellow-400');
+                    statusDisplay.classList.add('text-green-500');
+                } else {
+                    statusDisplay.textContent = 'FAILURE! PSYCHE TERMINATED.';
+                    selectedElement.classList.add('incorrect-card');
+                    statusDisplay.classList.remove('text-yellow-400');
+                    statusDisplay.classList.add('text-red-700');
+                }
+                
+                // Proceed to result handler after 2 seconds
+                setTimeout(() => handleGameResult(success, SUIT, GAME_NAME), 2000);
+            };
+
+            renderHearts();
+            
+            // Initial setup: Place the 'King of Hearts' icon on the correct card (card-0) and then start the shuffle.
+            getCardIcon(correctCardIndex).classList.remove('hidden');
+            getCardElement(correctCardIndex).classList.add('pulse-white', 'border-yellow-400');
+            document.getElementById('game-status').textContent = 'MEMORIZE THE SIGNAL CARD.';
+            
+            // Disable selection during shuffle
+            for (let i = 0; i < CARDS_COUNT; i++) {
+                getCardElement(i).style.cursor = 'default';
+                getCardElement(i).onclick = null;
+            }
+
+            // Start shuffle after a short delay for memorization
+            timer = setTimeout(() => {
+                getCardIcon(correctCardIndex).classList.add('hidden'); // Hide the icon
+                getCardElement(correctCardIndex).classList.remove('pulse-white', 'border-yellow-400');
+                document.getElementById('game-status').textContent = 'SHUFFLING... DO NOT LOOK AWAY!';
+                shuffleLoop();
+            }, 2000); 
+        }
+
+
+        // Initialize the game
+        document.addEventListener('DOMContentLoaded', () => {
+            renderHome();
+            updateUI();
+        });
+    </script>
+</body>
+</html>
