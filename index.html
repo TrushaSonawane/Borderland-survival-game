@@ -338,10 +338,10 @@
             
             // Define card attributes based on suit
             const cardAttributes = {
-                spades: { icon: '♠', color: 'black-suit-symbol', title: 'J of Spades', name: 'Endurance & Risk' },
-                diamonds: { icon: '♦', color: 'red-suit-symbol', title: 'Q of Diamonds', name: 'Calculation & Logic' },
-                hearts: { icon: '♥', color: 'red-suit-symbol', title: 'K of Hearts', name: 'Memory & Paradox' },
-                clubs: { icon: '♣', color: 'black-suit-symbol', title: '7 of Clubs', name: 'Physical Endurance' }
+                spades: { icon: '♠', color: 'black-suit-symbol', title: 'Spades', name: 'SPADES'},
+                diamonds: { icon: '♦', color: 'red-suit-symbol', title: 'Diamonds', name: 'DIAMONDS'},
+                hearts: { icon: '♥', color: 'red-suit-symbol', title: 'Hearts', name: 'HEARTS'},
+                clubs: { icon: '♣', color: 'black-suit-symbol', title: 'Clubs', name: 'CLUBS'}
             };
 
 
@@ -376,8 +376,8 @@
                                         <span class="card-symbol bottom-right ${symbolColorClass}" aria-hidden="true">${attrs.icon}</span>
 
                                         <!-- Main Content -->
-                                        <p class="text-xl font-extrabold text-gray-900 leading-tight mt-6">${attrs.icon}</p>
-                                        <p class="text-xs font-semibold text-gray-700 mt-1">${attrs.name}</p>
+                                        
+                                        <p class="text-xs font-semibold text-gray-700 mt-1" style="height: 140px"></p>
                                         
                                         ${isLocked ? '<p class="absolute inset-0 flex items-center justify-center bg-black/80 text-white text-lg font-bold rounded-lg">CLEARED</p>' : ''}
                                     </button>
@@ -397,10 +397,10 @@
             
             // Define card attributes based on suit
             const attrs = {
-                spades: { title: 'J ♠', icon: '♠', name: 'Endurance & Risk' },
-                diamonds: { title: 'Q ♦', icon: '♦', name: 'Calculation & Logic' },
-                hearts: { title: 'K ♥', icon: '♥', name: 'Memory & Paradox' },
-                clubs: { title: '7 ♣', icon: '♣', name: 'Physical Endurance' }
+                spades: { title: '♠', icon: '♠', name: 'SPADES'},
+                diamonds: { title: '♦', icon: '♦', name: 'DIAMONDS'},
+                hearts: { title: '♥', icon: '♥', name: 'HEARTS'},
+                clubs: { title: '♣', icon: '♣', name: 'CLUBS'}
             }[suitId];
 
             if (!attrs) return gameOver('FATAL ERROR: Invalid final card.');
